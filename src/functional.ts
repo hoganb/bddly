@@ -1,17 +1,17 @@
 import { registerStep } from '.';
 
-export function given<G>(precondition: () => Promise<G>): Given<G> {
+export function given<G>(precondition: () => G | Promise<G>): Given<G> {
   return new Given(null, precondition);
 }
 
 class Given<Current, Previous = unknown> {
-  constructor(private previous: Given<Previous, any> | null, private precondition: (state: Previous) => Promise<Current>) {}
+  constructor(private previous: Given<Previous, any> | null, private precondition: (state: Previous) => Current | Promise<Current>) {}
 
-  and<Next>(precondition: (state: Current) => Promise<Next>): Given<Next, Current> {
+  and<Next>(precondition: (state: Current) => Next | Promise<Next>): Given<Next, Current> {
     return new Given(this, precondition);
   }
 
-  when<Next>(action: (state: Current) => Promise<Next>): When<Next, Current> {
+  when<Next>(action: (state: Current) => Next | Promise<Next>): When<Next, Current> {
     return new When(this, action);
   }
 
@@ -29,9 +29,9 @@ class Given<Current, Previous = unknown> {
 }
 
 class When<Current, Previous> {
-  constructor(private given: Given<Previous, any>, private action: (state: Previous) => Promise<Current>) {}
+  constructor(private given: Given<Previous, any>, private action: (state: Previous) => Current | Promise<Current>) {}
 
-  then<Next>(assertion: (state: Current) => Promise<Next>): Then<Next, Current> {
+  then<Next>(assertion: (state: Current) => Next | Promise<Next>): Then<Next, Current> {
     return new Then(this, assertion);
   }
 
@@ -43,7 +43,7 @@ class When<Current, Previous> {
 }
 
 class Then<Current, Previous> {
-  constructor(private when: When<Previous, any>, private assertion: (state: Previous) => Promise<Current>) {}
+  constructor(private when: When<Previous, any>, private assertion: (state: Previous) => Current | Promise<Current>) {}
 
   async run(): Promise<void> {
     const state: Previous = await this.when._run();
